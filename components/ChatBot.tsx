@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Chat } from "@google/genai";
-import { createChatSession } from '../services/geminiService';
+import { createChatSession, MockChatSession } from '../services/geminiService';
 import { ChatMessage } from '../types';
 
 const ChatBot: React.FC = () => {
@@ -12,7 +11,7 @@ const ChatBot: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Ref to store the chat session so it persists between renders without causing re-renders
-  const chatSessionRef = useRef<Chat | null>(null);
+  const chatSessionRef = useRef<MockChatSession | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

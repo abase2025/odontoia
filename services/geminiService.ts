@@ -1,140 +1,105 @@
-import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { QuizQuestion } from "../types";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-// Models
-const FAST_MODEL = 'gemini-2.5-flash';
-// We use gemini-2.5-flash for vision + search capabilities
-const VISION_MODEL = 'gemini-2.5-flash'; 
+// Mock implementation to replace AI API
+// const ai = new GoogleGenAI({ apiKey: process.env.API_KEY }); 
 
 export const generateSummary = async (topic: string): Promise<string> => {
-  try {
-    const response = await ai.models.generateContent({
-      model: FAST_MODEL,
-      contents: `Forneça um resumo técnico, conciso e estruturado sobre o tópico de odontologia: "${topic}". Use marcadores para pontos chave. O tom deve ser profissional e educativo.`,
-    });
-    return response.text || "Não foi possível gerar o resumo no momento.";
-  } catch (error) {
-    console.error("Error generating summary:", error);
-    return "Ocorreu um erro ao comunicar com a IA. Verifique sua conexão ou tente novamente em alguns instantes.";
-  }
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  return `### Resumo Técnico: ${topic} (Modo Demonstração)
+
+Este é um resumo simulado gerado pelo sistema offline da OdontoFuture.
+
+*   **Definição Clínica:** ${topic} envolve o estudo e tratamento de estruturas dentárias e tecidos anexos.
+*   **Protocolos Principais:**
+    *   Diagnóstico por imagem e exame clínico detalhado.
+    *   Planejamento reverso para casos complexos.
+    *   Biossegurança rigorosa em todos os procedimentos.
+*   **Inovações Recentes:**
+    *   Uso de escaneamento intraoral 3D.
+    *   Materiais bioativos e regenerativos.
+    *   Teleodontologia e monitoramento remoto.
+
+> Nota: Para conteúdo gerado por IA em tempo real, é necessária a integração com a API Gemini.`;
 };
 
 export const generateQuizQuestion = async (topic: string = "Odontologia Geral"): Promise<QuizQuestion | null> => {
-  try {
-    const response = await ai.models.generateContent({
-      model: FAST_MODEL,
-      contents: `Gere uma questão de múltipla escolha difícil sobre ${topic} para estudantes de odontologia.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            question: { type: Type.STRING },
-            options: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING },
-              description: "4 opções de resposta"
-            },
-            correctAnswer: { 
-              type: Type.INTEGER, 
-              description: "O índice da resposta correta (0-3)" 
-            },
-            explanation: { type: Type.STRING, description: "Explicação breve da resposta correta" }
-          },
-          required: ["question", "options", "correctAnswer", "explanation"]
-        }
-      }
-    });
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text) as QuizQuestion;
-  } catch (error) {
-    console.error("Error generating quiz:", error);
-    return null;
-  }
+  // Mock Question Bank
+  const questions: QuizQuestion[] = [
+    {
+      question: "Em relação à anestesia local em odontologia, qual o mecanismo de ação principal dos anestésicos do tipo amida?",
+      options: [
+        "Bloqueio dos canais de cálcio na membrana nervosa",
+        "Bloqueio dos canais de sódio voltagem-dependentes",
+        "Aumento da permeabilidade ao potássio",
+        "Inibição da síntese de prostaglandinas"
+      ],
+      correctAnswer: 1,
+      explanation: "Os anestésicos locais atuam impedindo a geração e condução do impulso nervoso. Seu sítio de ação primário é a membrana celular, onde bloqueiam os canais de sódio, impedindo o influxo deste íon necessário para a despolarização."
+    },
+    {
+      question: "Qual das seguintes alterações sistêmicas requer profilaxia antibiótica prévia a procedimentos invasivos, segundo a AHA?",
+      options: [
+        "Prolapso da válvula mitral sem regurgitação",
+        "Histórico de Febre Reumática sem cardiopatia",
+        "Portadores de próteses valvares cardíacas",
+        "Marcapasso cardíaco convencional"
+      ],
+      correctAnswer: 2,
+      explanation: "A profilaxia antibiótica é indicada para pacientes com próteses valvares cardíacas, endocardite infecciosa prévia, e certas cardiopatias congênitas, devido ao alto risco de resultados adversos de uma endocardite."
+    }
+  ];
+
+  return questions[Math.floor(Math.random() * questions.length)];
 };
 
 export const gradeExamImage = async (base64Image: string, mimeType: string): Promise<{ text: string, sources: string[] }> => {
-  try {
-    const response = await ai.models.generateContent({
-      model: VISION_MODEL,
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: mimeType
-            }
-          },
-          {
-            text: `Atue como um Corretor de Elite de Odontologia. Analise TODO o conteúdo desta imagem, identificando TODAS as questões presentes (sejam 1 ou várias).
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
-            Sua missão:
-            1. Ler o arquivo completo e identificar cada questão (Objetiva ou Subjetiva/Dissertativa).
-            2. Para questões OBJETIVAS: Identificar a alternativa correta com 100% de certeza.
-            3. Para questões SUBJETIVAS: Fornecer a resposta ideal/gabarito esperado.
-            4. Identificar a numeração original da questão na imagem.
-            5. Cruzar dados online para encontrar a banca/concurso de origem.
+  return {
+    text: `---
+### Questão 1
+**Tipo:** Objetiva
+**Enunciado Identificado:** "Paciente de 45 anos, gênero feminino, comparece à clínica..."
 
-            Formato de Resposta Obrigatório (Markdown):
-            
-            ---
-            ### Questão [Número identificado na imagem]
-            **Tipo:** [Objetiva / Subjetiva]
-            **Enunciado Identificado:** [Breve trecho do início da questão]
-            
-            **RESPOSTA CORRETA:** 
-            [Se Objetiva: Letra e Texto da alternativa]
-            [Se Subjetiva: A resposta dissertativa ideal e completa]
+**RESPOSTA CORRETA:** 
+C) Pulpite Irreversível Sintomática.
 
-            **Origem:** [Banca/Ano/Concurso se encontrado]
-            **Explicação:** [Justificativa técnica baseada na literatura]
-            ---
-            (Repita a estrutura acima para TODAS as questões encontradas na imagem)`
-          }
-        ]
-      },
-      config: {
-        tools: [{ googleSearch: {} }], // Enable Google Search Grounding
-      }
-    });
+**Origem:** Banca Vunesp / 2023 / Concurso Prefeitura de SP
+**Explicação:** O quadro descrito de dor espontânea, pulsátil e exacerbada pelo calor, que não cede com analgésicos comuns, é clássico de pulpite irreversível sintomática. O tratamento indicado é a biopulpectomia.
 
-    const text = response.text || "Não foi possível analisar a imagem.";
-    
-    // Extract sources from grounding metadata
-    const sources: string[] = [];
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    
-    if (chunks) {
-      chunks.forEach((chunk: any) => {
-        if (chunk.web?.uri) {
-          sources.push(chunk.web.uri);
-        }
-      });
-    }
+---
+### Questão 2
+**Tipo:** Subjetiva
+**Enunciado Identificado:** "Descreva os princípios da osteointegração..."
 
-    // Remove duplicate URLs
-    const uniqueSources = [...new Set(sources)];
+**RESPOSTA CORRETA:** 
+A osteointegração é a conexão estrutural e funcional direta entre o osso vivo ordenado e a superfície de um implante submetido a carga funcional. Seus princípios incluem: biocompatibilidade do material (titânio), desenho do implante, acabamento de superfície, leito ósseo saudável, técnica cirúrgica atraumática e controle de carga (estabilidade primária).
 
-    return { text, sources: uniqueSources };
-  } catch (error) {
-    console.error("Error grading exam:", error);
-    return { 
-      text: "Erro ao processar a imagem. Certifique-se de que a imagem é clara e tente novamente.", 
-      sources: [] 
-    };
-  }
+**Origem:** Questão Dissertativa Padrão USP
+**Explicação:** Baseado nos estudos de Brånemark.
+---
+
+*(Nota: Esta é uma análise simulada. A IA foi desligada conforme solicitado.)*`,
+    sources: ["https://www.vunesp.com.br", "https://pubmed.ncbi.nlm.nih.gov/"]
+  };
 };
 
-export const createChatSession = (): Chat => {
-  return ai.chats.create({
-    model: FAST_MODEL,
-    config: {
-      systemInstruction: "Você é o assistente virtual inteligente da plataforma 'OdontoFuture AI'. Sua função é ajudar estudantes de odontologia. Você deve responder dúvidas sobre matérias odontológicas (anatomia, periodontia, cirurgia, etc), explicar termos técnicos e guiar o usuário sobre como usar o app (temos Resumos, Quiz e Corretor de Provas). Seja conciso, futurista e educado. Use emojis ocasionalmente. Responda sempre em Markdown."
+// Mock Chat Session Interface
+export interface MockChatSession {
+  sendMessage: (params: { message: string }) => Promise<{ text: string }>;
+}
+
+export const createChatSession = (): MockChatSession => {
+  return {
+    sendMessage: async ({ message }) => {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return {
+        text: `**Resposta Automática:** Recebi sua mensagem: "${message}". \n\nComo a API de Inteligência Artificial foi desativada, não posso gerar uma resposta contextualizada no momento. Estou operando em modo offline/demonstração. 🤖⛔`
+      };
     }
-  });
+  };
 };
