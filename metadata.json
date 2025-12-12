@@ -1,0 +1,8 @@
+{
+  "name": "OdontoFuture AI",
+  "description": "Uma plataforma de estudo de odontologia futurista com correção de provas via IA e geração de conteúdo rápido.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
